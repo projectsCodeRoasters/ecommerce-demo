@@ -2,79 +2,85 @@ package com.example;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-// Code smells deliberados para el ejercicio de Clean Code Review:
-// nombres sin semántica, método largo, null en vez de Optional,
-// comentarios que explican el WHAT en lugar del WHY.
 @Service
 public class ProductService {
+
+    private static final BigDecimal VIP_HIGH_VALUE_THRESHOLD = BigDecimal.valueOf(100);
+    private static final BigDecimal VIP_HIGH_VALUE_DISCOUNT = BigDecimal.valueOf(0.7);
+    private static final BigDecimal VIP_STANDARD_DISCOUNT = BigDecimal.valueOf(0.8);
+    private static final int VIP_HIGH_STOCK_THRESHOLD = 50;
+    private static final BigDecimal VIP_HIGH_STOCK_EXTRA_DISCOUNT = BigDecimal.valueOf(0.95);
+
+    private static final BigDecimal REGULAR_DISCOUNT = BigDecimal.valueOf(0.9);
+    private static final int REGULAR_LOW_STOCK_THRESHOLD = 5;
+    private static final BigDecimal REGULAR_LOW_STOCK_SURCHARGE = BigDecimal.valueOf(1.1);
+
+    private static final BigDecimal CLEARANCE_DISCOUNT = BigDecimal.valueOf(0.5);
 
     @Autowired
     private ProductRepository productRepository;
 
-    // Calcula el precio con descuento
-    public Object d(List<Product> l, int x) {
-        if (l == null) {
-            return null;
+    public Optional<Product> applyDiscount(List<Product> products, int customerType) {
+        if (products == null) {
+            return Optional.empty();
         }
-        Object result = null;
-        for (int i = 0; i < l.size(); i++) {
-            Product p = l.get(i);
-            if (p == null) {
+        Product lastUpdated = null;
+        for (Product product : products) {
+            if (product == null) {
                 continue;
             }
-            BigDecimal pr = p.getPrice();
-            if (x == 1) {
-                // Cliente VIP: 20% de descuento
-                if (pr.compareTo(BigDecimal.valueOf(100)) > 0) {
-                    pr = pr.multiply(BigDecimal.valueOf(0.7));
-                } else {
-                    pr = pr.multiply(BigDecimal.valueOf(0.8));
-                }
-                if (p.getStock() > 50) {
-                    pr = pr.multiply(BigDecimal.valueOf(0.95));
-                }
-            } else if (x == 2) {
-                // Cliente regular: 10% de descuento
-                pr = pr.multiply(BigDecimal.valueOf(0.9));
-                if (p.getStock() < 5) {
-                    pr = pr.multiply(BigDecimal.valueOf(1.1));
-                }
-            } else if (x == 3) {
-                // Liquidación: 50% de descuento
-                pr = pr.multiply(BigDecimal.valueOf(0.5));
-            } else {
-                pr = p.getPrice();
-            }
-            p.setPrice(pr);
-            productRepository.save(p);
-            result = p;
+            product.setPrice(discountedPriceFor(product, customerType));
+            productRepository.save(product);
+            lastUpdated = product;
         }
-        return result;
+        return Optional.ofNullable(lastUpdated);
     }
 
-    // Busca por nombre
-    public Product f(String n) {
-        List<Product> all = productRepository.findAll();
-        for (Product p : all) {
-            if (p.getName().equalsIgnoreCase(n)) {
-                return p;
-            }
-        }
-        return null;
+    private BigDecimal discountedPriceFor(Product product, int customerType) {
+        return switch (customerType) {
+            case 1 -> vipPrice(product);
+            case 2 -> regularPrice(product);
+            case 3 -> product.getPrice().multiply(CLEARANCE_DISCOUNT);
+            default -> product.getPrice();
+        };
     }
 
-    // Comprueba si hay stock suficiente
-    public boolean chk(Long id, int q) {
-        Product p = productRepository.findById(id).orElse(null);
-        if (p == null) {
-            return false;
+    private BigDecimal vipPrice(Product product) {
+        BigDecimal price = product.getPrice();
+        price = isHighValue(price)
+                ? price.multiply(VIP_HIGH_VALUE_DISCOUNT)
+                : price.multiply(VIP_STANDARD_DISCOUNT);
+        if (product.getStock() > VIP_HIGH_STOCK_THRESHOLD) {
+            price = price.multiply(VIP_HIGH_STOCK_EXTRA_DISCOUNT);
         }
-        if (p.getStock() >= q) {
-            return true;
+        return price;
+    }
+
+    private BigDecimal regularPrice(Product product) {
+        BigDecimal price = product.getPrice().multiply(REGULAR_DISCOUNT);
+        if (product.getStock() < REGULAR_LOW_STOCK_THRESHOLD) {
+            price = price.multiply(REGULAR_LOW_STOCK_SURCHARGE);
         }
-        return false;
+        return price;
+    }
+
+    private boolean isHighValue(BigDecimal price) {
+        return price.compareTo(VIP_HIGH_VALUE_THRESHOLD) > 0;
+    }
+
+    public Optional<Product> findByName(String name) {
+        return productRepository.findAll().stream()
+                .filter(product -> product.getName().equalsIgnoreCase(name))
+                .findFirst();
+    }
+
+    public boolean hasEnoughStock(Long productId, int quantity) {
+        return productRepository.findById(productId)
+                .map(product -> product.getStock() >= quantity)
+                .orElse(false);
     }
 }
