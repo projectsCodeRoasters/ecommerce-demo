@@ -1,23 +1,22 @@
 package com.example.domain;
 
 import com.example.Product;
-import java.math.BigDecimal;
 
 public class OrderLine {
 
     private Long id;
     private final Product product;
-    private final int quantity;
+    private final Quantity quantity;
     // precio "congelado" en el momento del pedido — copiado de Product.price
-    private final BigDecimal unitPrice;
+    private final Money unitPrice;
 
-    public OrderLine(Product product, int quantity, BigDecimal unitPrice) {
+    public OrderLine(Product product, Quantity quantity, Money unitPrice) {
         this.product = product;
         this.quantity = quantity;
         this.unitPrice = unitPrice;
     }
 
-    public OrderLine(Long id, Product product, int quantity, BigDecimal unitPrice) {
+    public OrderLine(Long id, Product product, Quantity quantity, Money unitPrice) {
         this.id = id;
         this.product = product;
         this.quantity = quantity;
@@ -28,23 +27,19 @@ public class OrderLine {
         return id;
     }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
     public Product getProduct() {
         return product;
     }
 
-    public int getQuantity() {
+    public Quantity getQuantity() {
         return quantity;
     }
 
-    public BigDecimal getUnitPrice() {
+    public Money getUnitPrice() {
         return unitPrice;
     }
 
-    public BigDecimal lineTotal() {
-        return unitPrice.multiply(BigDecimal.valueOf(quantity));
+    public Money lineTotal() {
+        return unitPrice.multiply(quantity.value());
     }
 }

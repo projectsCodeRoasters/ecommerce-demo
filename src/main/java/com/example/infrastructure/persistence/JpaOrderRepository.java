@@ -1,15 +1,19 @@
 package com.example.infrastructure.persistence;
 
+import com.example.domain.Money;
 import com.example.domain.Order;
+import com.example.domain.OrderId;
 import com.example.domain.OrderLine;
 import com.example.domain.OrderRepository;
+import com.example.domain.Quantity;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
-// Único punto del sistema que conoce tanto el dominio (Order/OrderLine) como
-// la representación JPA (OrderJpaEntity/OrderLineJpaEntity).
+// Único punto del sistema que conoce tanto el dominio (Order/OrderLine, con
+// sus value objects) como la representación JPA (OrderJpaEntity/
+// OrderLineJpaEntity, con tipos primitivos).
 @Repository
 public class JpaOrderRepository implements OrderRepository {
 
@@ -25,15 +29,19 @@ public class JpaOrderRepository implements OrderRepository {
 
     private OrderJpaEntity toEntity(Order order) {
         List<OrderLineJpaEntity> lines = new ArrayList<>(order.getLines().stream()
-                .map(line -> new OrderLineJpaEntity(line.getId(), line.getProduct(), line.getQuantity(), line.getUnitPrice()))
+                .map(line -> new OrderLineJpaEntity(
+                        line.getId(), line.getProduct(), line.getQuantity().value(), line.getUnitPrice().amount()))
                 .toList());
-        return new OrderJpaEntity(order.getId(), order.getCustomer(), lines, order.getTotal(), order.getStatus());
+        Long id = order.getId().map(OrderId::value).orElse(null);
+        return new OrderJpaEntity(id, order.getCustomer(), lines, order.getTotal().amount(), order.getStatus());
     }
 
     private Order toDomain(OrderJpaEntity entity) {
         List<OrderLine> lines = entity.getLines().stream()
-                .map(line -> new OrderLine(line.getId(), line.getProduct(), line.getQuantity(), line.getUnitPrice()))
+                .map(line -> new OrderLine(
+                        line.getId(), line.getProduct(), new Quantity(line.getQuantity()), Money.of(line.getUnitPrice())))
                 .toList();
-        return new Order(entity.getId(), entity.getCustomer(), lines, entity.getTotal(), entity.getStatus());
+        OrderId id = new OrderId(entity.getId());
+        return new Order(id, entity.getCustomer(), lines, Money.of(entity.getTotal()), entity.getStatus());
     }
 }

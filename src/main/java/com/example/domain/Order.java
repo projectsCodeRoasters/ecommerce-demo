@@ -1,18 +1,20 @@
 package com.example.domain;
 
 import com.example.Customer;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
+// Agregado raíz: única puerta de entrada para modificar sus líneas y
+// mantener el invariante "el total es siempre la suma de las líneas".
 // Modelo de dominio puro: sin JPA, sin Spring. La persistencia se resuelve
 // en infrastructure/persistence a través del puerto OrderRepository.
 public class Order {
 
-    private Long id;
+    private OrderId id;
     private final Customer customer;
     private final List<OrderLine> lines = new ArrayList<>();
-    private BigDecimal total;
+    private Money total;
     private String status;
 
     public Order(Customer customer) {
@@ -20,7 +22,7 @@ public class Order {
         this.status = "CREATED";
     }
 
-    public Order(Long id, Customer customer, List<OrderLine> lines, BigDecimal total, String status) {
+    public Order(OrderId id, Customer customer, List<OrderLine> lines, Money total, String status) {
         this.id = id;
         this.customer = customer;
         this.lines.addAll(lines);
@@ -32,12 +34,10 @@ public class Order {
         lines.add(line);
     }
 
-    public BigDecimal calculateTotal() {
-        BigDecimal sum = BigDecimal.ZERO;
-        for (OrderLine line : lines) {
-            sum = sum.add(line.lineTotal());
-        }
-        return sum;
+    public Money calculateTotal() {
+        return lines.stream()
+                .map(OrderLine::lineTotal)
+                .reduce(Money.zero(), Money::add);
     }
 
     public void confirm() {
@@ -45,12 +45,14 @@ public class Order {
         this.status = "CONFIRMED";
     }
 
-    public Long getId() {
-        return id;
+    // Asigna la identidad tras persistir por primera vez — un Order recién
+    // creado nace sin OrderId (ver getId()).
+    public void assignId(OrderId id) {
+        this.id = id;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public Optional<OrderId> getId() {
+        return Optional.ofNullable(id);
     }
 
     public Customer getCustomer() {
@@ -61,7 +63,7 @@ public class Order {
         return lines;
     }
 
-    public BigDecimal getTotal() {
+    public Money getTotal() {
         return total;
     }
 

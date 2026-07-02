@@ -5,9 +5,11 @@ import com.example.CustomerRepository;
 import com.example.Product;
 import com.example.ProductRepository;
 import com.example.application.PlaceOrderCommand.OrderLineCommand;
+import com.example.domain.Money;
 import com.example.domain.Order;
 import com.example.domain.OrderLine;
 import com.example.domain.OrderRepository;
+import com.example.domain.Quantity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -33,7 +35,7 @@ public class PlaceOrderService implements PlaceOrderUseCase {
             if (product.getStock() < lineCommand.quantity()) {
                 throw new RuntimeException("Not enough stock for " + product.getName());
             }
-            order.addLine(new OrderLine(product, lineCommand.quantity(), product.getPrice()));
+            order.addLine(new OrderLine(product, new Quantity(lineCommand.quantity()), Money.of(product.getPrice())));
         }
         order.confirm();
 

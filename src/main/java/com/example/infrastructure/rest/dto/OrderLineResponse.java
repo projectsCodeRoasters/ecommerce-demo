@@ -13,7 +13,7 @@ public record OrderLineResponse(
         return new OrderLineResponse(
                 line.getId(),
                 ProductResponse.from(line.getProduct()),
-                line.getQuantity(),
-                line.getUnitPrice());
+                line.getQuantity().value(),
+                line.getUnitPrice().amount());
     }
 }
