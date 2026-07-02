@@ -15,10 +15,10 @@ public class OrderService {
     @Autowired
     private ProductRepository productRepository;
 
-    // TODO: aún no implementado — punto de partida del ejercicio de TDD.
-    // Debe sumar el total de todas las líneas del pedido.
     public BigDecimal calculateTotal(Order order) {
-        return null;
+        return order.getLines().stream()
+                .map(OrderLine::lineTotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     public Order placeOrder(Order order) {
