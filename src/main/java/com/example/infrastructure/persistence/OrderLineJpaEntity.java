@@ -1,5 +1,6 @@
-package com.example;
+package com.example.infrastructure.persistence;
 
+import com.example.Product;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -8,7 +9,7 @@ import jakarta.persistence.ManyToOne;
 import java.math.BigDecimal;
 
 @Entity
-public class OrderLine {
+public class OrderLineJpaEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,14 +23,19 @@ public class OrderLine {
     // precio "congelado" en el momento del pedido — copiado de Product.price
     private BigDecimal unitPrice;
 
-    protected OrderLine() {
+    protected OrderLineJpaEntity() {
         // requerido por JPA
     }
 
-    public OrderLine(Product product, int quantity, BigDecimal unitPrice) {
+    public OrderLineJpaEntity(Long id, Product product, int quantity, BigDecimal unitPrice) {
+        this.id = id;
         this.product = product;
         this.quantity = quantity;
         this.unitPrice = unitPrice;
+    }
+
+    public Long getId() {
+        return id;
     }
 
     public Product getProduct() {
@@ -42,9 +48,5 @@ public class OrderLine {
 
     public BigDecimal getUnitPrice() {
         return unitPrice;
-    }
-
-    public BigDecimal lineTotal() {
-        return unitPrice.multiply(BigDecimal.valueOf(quantity));
     }
 }

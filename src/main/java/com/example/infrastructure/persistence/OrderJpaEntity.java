@@ -1,5 +1,6 @@
-package com.example;
+package com.example.infrastructure.persistence;
 
+import com.example.Customer;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -12,15 +13,12 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
-// Entidad JPA expuesta directamente (sin DTO, sin puerto) — a propósito,
-// es lo que el ejercicio de arquitectura hexagonal debe corregir.
-//
 // @Table(name = "orders") es obligatorio: "order" es palabra reservada en
 // SQL (ORDER BY) y rompe las foreign keys generadas por Hibernate tanto en
 // H2 como en Postgres si se deja el nombre de tabla por defecto.
 @Entity
 @Table(name = "orders")
-public class Order {
+public class OrderJpaEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,23 +28,22 @@ public class Order {
     private Customer customer;
 
     @OneToMany(cascade = CascadeType.ALL)
-    private List<OrderLine> lines = new ArrayList<>();
+    private List<OrderLineJpaEntity> lines = new ArrayList<>();
 
     private BigDecimal total;
 
     private String status;
 
-    protected Order() {
+    protected OrderJpaEntity() {
         // requerido por JPA
     }
 
-    public Order(Customer customer) {
+    public OrderJpaEntity(Long id, Customer customer, List<OrderLineJpaEntity> lines, BigDecimal total, String status) {
+        this.id = id;
         this.customer = customer;
-        this.status = "CREATED";
-    }
-
-    public void addLine(OrderLine line) {
-        lines.add(line);
+        this.lines = lines;
+        this.total = total;
+        this.status = status;
     }
 
     public Long getId() {
@@ -57,7 +54,7 @@ public class Order {
         return customer;
     }
 
-    public List<OrderLine> getLines() {
+    public List<OrderLineJpaEntity> getLines() {
         return lines;
     }
 
@@ -65,15 +62,7 @@ public class Order {
         return total;
     }
 
-    public void setTotal(BigDecimal total) {
-        this.total = total;
-    }
-
     public String getStatus() {
         return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
     }
 }

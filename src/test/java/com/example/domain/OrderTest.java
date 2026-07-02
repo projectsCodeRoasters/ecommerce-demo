@@ -1,13 +1,13 @@
-package com.example;
+package com.example.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.example.Customer;
+import com.example.Product;
 import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;
 
-class OrderServiceTest {
-
-    private final OrderService orderService = new OrderService();
+class OrderTest {
 
     @Test
     void dado_pedido_con_dos_lineas_calcula_total_correcto() {
@@ -17,7 +17,7 @@ class OrderServiceTest {
         order.addLine(new OrderLine(productA, 2, new BigDecimal("10.00")));
         order.addLine(new OrderLine(productB, 3, new BigDecimal("5.00")));
 
-        BigDecimal total = orderService.calculateTotal(order);
+        BigDecimal total = order.calculateTotal();
 
         assertThat(total).isEqualByComparingTo("35.00");
     }
